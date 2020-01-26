@@ -26,7 +26,7 @@ try:
             fileHandle = open(log_path + files, "rb")
             fileBytes = fileHandle.read()
             # upload file to dropbox
-            upload_response = db_client.files_upload(fileBytes, "/" + files, autorename=True)
+            upload_response = db_client.files_upload(fileBytes, "/waeschekeller_ug/" + files, autorename=True)
             move(log_path + files, arc_path)
             print(upload_response)
         else:

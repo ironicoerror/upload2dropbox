@@ -8,32 +8,62 @@ import datetime
 
 the_date = str(datetime.datetime.now())[0:10]
 log_path = r"/home/pi/Desktop/temperature_logs/waeschekeller_ug/"
+status_path = r"/home/pi/Desktop/"
 filelist = os.listdir(log_path)
-filelist.remove(the_date.replace("-", "") + ".log") #do not copy todays log it might be changed 
-
+status_file_list = os.listdir(status_path)
+print("Timestamp: " + str(datetime.datetime.now())[0:19])
 try: 
-    arc_path = log_path + "archive"
-    os.mkdir(arc_path)
+    archive_path = log_path + "archive"
+    os.mkdir(archive_path)
 except FileExistsError:
-    print("Archive already exists")
+    pass
 try:
     # connect to dropbox
     db_client = dropbox.Dropbox("zpAbOclWSRUAAAAAAAAEelZenv-Ae8W-zXeTeSUqdiVQNpb9bBbF3o8DHR3OVSGb")
-    for files in filelist:
-        if os.path.isdir(log_path + files) is False:
+    print("Starting handle for templogs: ")
+    count = 0
+    for log_file in filelist:
+        if os.path.isdir(log_path + log_file) is False:
             try:
-                print("Uploading: " + files)
-                # open file
-                fileHandle = open(log_path + files, "rb")
-                fileBytes = fileHandle.read()
-                # upload file to dropbox
-                upload_response = db_client.files_upload(fileBytes, "/waeschekeller_ug/" + files, autorename=True)
-                move(log_path + files, arc_path)
-                print(upload_response)
+                print("Uploading: " + log_file)
+                # open templog
+                log_file_handle = open(log_path + log_file, "rb")
+                log_file_bytes = log_file_handle.read()
+                # upload tempplog to dropbox
+                log_file_upload_response = db_client.files_upload(log_file_bytes, "/waeschekeller_ug/" + log_file, autorename=True, mode=dropbox.files.WriteMode.overwrite)
+                print(log_file_upload_response)
+                if the_date.replace("-", "") in log_file:
+                    print("todays templog has been updated.")
+                else:
+                    move(log_path + log_file, archive_path)
+                    count += 1
+            except Exception as e:
+                print("Following error with file: " + log_file)
+                print(e)
+                count -= 1 
             finally:
-                fileHandle.close()
-        else:
-            print(files + " is a directory and not uploaded")
+                log_file_handle.close()
+    print(str(count) + " templog_files have been uploaded to Dropbox.")
+    print("Starting handle for statuslogs: ")
+    count = 0
+    for status_file in status_file_list:
+        if os.path.isdir(status_path + status_file) is False:
+            if "last_" in status_file:
+                count += 1
+                try:
+                    # open statuslog
+                    print("Uploading status file :" + status_file)
+                    status_file_handle = open(status_path + status_file, "rb")
+                    status_file_bytes = status_file_handle.read()
+                    # upload statuslog to dropbox
+                    status_file_upload_response = db_client.files_upload(status_file_bytes, "/" + status_file, autorename=True, mode=dropbox.files.WriteMode.overwrite)
+                    print(status_file_upload_response)
+                except Exception as e:
+                    print("Following error with file: " + status_file)
+                    print(e)
+                    count -= 1
+                finally:
+                    status_file_handle.close()
+    print(str(count) + " statuslog_files have been updated.")
 except Exception as e:
     print(e)
-

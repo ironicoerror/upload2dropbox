@@ -1,0 +1,6 @@
+#ignore all pycache files
+*.pyc
+*.pyo
+/__pycache__
+#ingnore accestoken
+db_access_token 

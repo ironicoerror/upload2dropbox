@@ -7,6 +7,8 @@ from shutil import move
 import datetime
 
 the_date = str(datetime.datetime.now())[0:10]
+token_path = r"/home/pi/Desktop/upload2dropbox/"
+token_file = "db_access_token"
 log_path = r"/home/pi/Desktop/temperature_logs/waeschekeller_ug/"
 status_path = r"/home/pi/Desktop/"
 filelist = os.listdir(log_path)
@@ -19,7 +21,9 @@ except FileExistsError:
     pass
 try:
     # connect to dropbox
-    db_client = dropbox.Dropbox("zpAbOclWSRUAAAAAAAAEelZenv-Ae8W-zXeTeSUqdiVQNpb9bBbF3o8DHR3OVSGb")
+    token_file = open(token_path + token_file, "r")
+    access_token = token_file.read()
+    db_client = dropbox.Dropbox(access_token.rstrip())
     print("Starting handle for templogs: ")
     count = 0
     for log_file in filelist:
@@ -40,7 +44,10 @@ try:
             except Exception as e:
                 print("Following error with file: " + log_file)
                 print(e)
-                count -= 1 
+                if count == 0:
+                    pass
+                else:
+                    count -= 1 
             finally:
                 log_file_handle.close()
     print(str(count) + " templog_files have been uploaded to Dropbox.")
